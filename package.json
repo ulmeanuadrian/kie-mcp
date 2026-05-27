@@ -10,8 +10,20 @@
   "files": [
     "dist",
     "README.md",
+    "INSTALL.md",
     "LICENSE"
   ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ulmeanuadrian/kie-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ulmeanuadrian/kie-mcp/issues"
+  },
+  "homepage": "https://github.com/ulmeanuadrian/kie-mcp#readme",
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc",
     "dev": "tsx --env-file=.env src/index.ts",
