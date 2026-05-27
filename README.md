@@ -1,4 +1,4 @@
-# @ulmeanuadrian/kie-mcp
+# @ulmeanua/kie-mcp
 
 MCP server for [kie.ai](https://kie.ai) — an aggregator for generative media models (Veo, Suno, Runway, Flux, Nano Banana, Midjourney, ElevenLabs, etc.) with prices well below the official APIs.
 
@@ -13,7 +13,7 @@ MCP server for [kie.ai](https://kie.ai) — an aggregator for generative media m
 ## Install
 
 ```bash
-npm install -g @ulmeanuadrian/kie-mcp
+npm install -g @ulmeanua/kie-mcp
 ```
 
 Or run via `npx` from your MCP client config:
@@ -23,7 +23,7 @@ Or run via `npx` from your MCP client config:
   "mcpServers": {
     "kie": {
       "command": "npx",
-      "args": ["-y", "@ulmeanuadrian/kie-mcp"],
+      "args": ["-y", "@ulmeanua/kie-mcp"],
       "env": {
         "KIE_API_KEY": "sk-..."
       }

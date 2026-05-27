@@ -1,4 +1,4 @@
-# Install @ulmeanuadrian/kie-mcp — step-by-step guide
+# Install @ulmeanua/kie-mcp — step-by-step guide
 
 This MCP server gives you access to **30+ AI models** through Kie.ai (Veo, Suno, Runway, Flux, Nano Banana, ElevenLabs, Midjourney, etc.) directly inside Claude Desktop / Claude Code / Cursor / Windsurf. Lower cost than the official APIs, automatic polling, asset downloaded locally.
 
@@ -36,7 +36,7 @@ Add (or merge into `mcpServers`):
   "mcpServers": {
     "kie": {
       "command": "npx",
-      "args": ["-y", "@ulmeanuadrian/kie-mcp"],
+      "args": ["-y", "@ulmeanua/kie-mcp"],
       "env": {
         "KIE_API_KEY": "your-kie-key-here"
       }
@@ -60,7 +60,7 @@ Edit `~/.cursor/mcp.json` (Mac/Linux) or `%USERPROFILE%\.cursor\mcp.json` (Windo
   "mcpServers": {
     "kie": {
       "command": "npx",
-      "args": ["-y", "@ulmeanuadrian/kie-mcp"],
+      "args": ["-y", "@ulmeanua/kie-mcp"],
       "env": {
         "KIE_API_KEY": "your-key-here"
       }
@@ -81,7 +81,7 @@ In any MCP client (after restart), tell the AI:
 
 > "Use kie_health to show me the server is running."
 
-If it replies with a JSON containing `package: @ulmeanuadrian/kie-mcp` and `api_key_set: true`, you're set.
+If it replies with a JSON containing `package: @ulmeanua/kie-mcp` and `api_key_set: true`, you're set.
 
 Then:
 
@@ -139,7 +139,7 @@ Ask: `kie_models` (or filtered by kind):
 
 ## 9. Common issues
 
-**"Cannot find module '@ulmeanuadrian/kie-mcp'"**
+**"Cannot find module '@ulmeanua/kie-mcp'"**
 → Your Node version is <22. Update Node.
 
 **"KIE_API_KEY is required"**
