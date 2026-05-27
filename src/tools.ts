@@ -392,15 +392,162 @@ function buildModelsTool(): ToolHandler {
   };
 }
 
+const COMPARE_CONCURRENCY = 4;
+
+function buildCompareTool(ctx: ToolCtx): ToolHandler {
+  return {
+    name: 'kie_compare',
+    description:
+      'Run the same prompt across multiple kie.ai models in parallel and return a grid of results. Max 4 concurrent. Useful for "show me Flux vs Nano Banana vs GPT Image 2" style picking.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        prompt: { type: 'string', minLength: 1 },
+        models: {
+          type: 'array',
+          items: { type: 'string', enum: Object.keys(MODEL_REGISTRY) },
+          minItems: 2,
+          maxItems: 8,
+        },
+        extra_input: {
+          type: 'object',
+          description: 'Additional input merged with {prompt} into each model call (e.g. aspect_ratio).',
+        },
+        wait: { type: 'boolean', default: true },
+        download: { type: 'boolean', default: true },
+      },
+      required: ['prompt', 'models'],
+      additionalProperties: false,
+    },
+    async handle(args) {
+      const parsed = z
+        .object({
+          prompt: z.string().min(1),
+          models: z.array(z.string()).min(2).max(8),
+          extra_input: z.record(z.unknown()).optional(),
+          wait: z.boolean().optional().default(true),
+          download: z.boolean().optional().default(true),
+        })
+        .parse(args);
+
+      const specs: ModelSpec[] = [];
+      for (const id of parsed.models) {
+        const s = MODEL_REGISTRY[id];
+        if (!s) throw new Error(`unknown model: ${id}`);
+        specs.push(s);
+      }
+      const kinds = new Set(specs.map((s) => s.kind));
+      if (kinds.size > 1) {
+        throw new Error(
+          `kie_compare requires all models to share the same kind; got: ${[...kinds].join(', ')}`,
+        );
+      }
+
+      // Build per-model validated input (each model may accept slightly different param shape)
+      const tasks = specs.map((spec) => {
+        const rawInput = { prompt: parsed.prompt, ...(parsed.extra_input ?? {}) };
+        const validated = safeValidate(spec, rawInput);
+        return { spec, validated };
+      });
+
+      const results: Array<Record<string, unknown>> = [];
+      for (let i = 0; i < tasks.length; i += COMPARE_CONCURRENCY) {
+        const slice = tasks.slice(i, i + COMPARE_CONCURRENCY);
+        const settled = await Promise.allSettled(
+          slice.map(({ spec, validated }) =>
+            executeSubmission(ctx, spec, validated, undefined, parsed.wait, parsed.download),
+          ),
+        );
+        for (let j = 0; j < settled.length; j++) {
+          const r = settled[j];
+          const spec = slice[j].spec;
+          if (r.status === 'fulfilled') {
+            results.push({ ...r.value, model: spec.id, ok: true });
+          } else {
+            results.push({
+              model: spec.id,
+              ok: false,
+              error: r.reason instanceof Error ? r.reason.message : String(r.reason),
+            });
+          }
+        }
+      }
+
+      const totalCost = results
+        .filter((r) => r.ok)
+        .reduce((acc, r) => acc + Number((r as { cost_usd?: number }).cost_usd ?? 0), 0);
+
+      return {
+        prompt: parsed.prompt,
+        models_attempted: parsed.models.length,
+        models_succeeded: results.filter((r) => r.ok).length,
+        total_cost_usd: Number(totalCost.toFixed(4)),
+        results,
+      };
+    },
+  };
+}
+
+function safeValidate(spec: ModelSpec, input: Record<string, unknown>): Record<string, unknown> {
+  try {
+    return spec.inputSchema.parse(input) as Record<string, unknown>;
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    throw new Error(`input invalid for model ${spec.id}: ${msg}`);
+  }
+}
+
+function buildCostReportTool(ctx: ToolCtx): ToolHandler {
+  return {
+    name: 'kie_cost_report',
+    description:
+      'Show cost telemetry. Aggregates total $ spent and per-model breakdown. Optional window in hours.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        hours: {
+          type: 'number',
+          minimum: 0.1,
+          maximum: 8760,
+          description: 'Look back N hours. Omit for all-time total.',
+        },
+      },
+      additionalProperties: false,
+    },
+    async handle(args) {
+      const parsed = z.object({ hours: z.number().positive().optional() }).parse(args);
+      const sinceMs = parsed.hours ? Date.now() - parsed.hours * 3_600_000 : undefined;
+      const total = ctx.store.totalCostUsd(sinceMs);
+      const byModel = ctx.store.costByModel(sinceMs);
+      return {
+        window: parsed.hours ? `last ${parsed.hours}h` : 'all-time',
+        total_usd: Number(total.toFixed(4)),
+        budget_usd: ctx.config.costBudgetUsd,
+        remaining_usd:
+          ctx.config.costBudgetUsd !== null
+            ? Number((ctx.config.costBudgetUsd - total).toFixed(4))
+            : null,
+        by_model: byModel.map((r) => ({
+          model: r.model,
+          count: r.count,
+          total_usd: Number(r.total_usd.toFixed(4)),
+        })),
+      };
+    },
+  };
+}
+
 export function buildKieTools(ctx: ToolCtx): ToolHandler[] {
   return [
     buildSubmitTool('kie_image', 'image', ['image'], ctx),
     buildSubmitTool('kie_video', 'video', ['video'], ctx),
     buildSubmitTool('kie_music', 'music', ['music'], ctx),
     buildSubmitTool('kie_speech', 'speech/sfx', ['speech', 'sfx'], ctx),
+    buildCompareTool(ctx),
     buildWaitTool(ctx),
     buildStatusTool(ctx),
     buildAssetsTool(ctx),
+    buildCostReportTool(ctx),
     buildModelsTool(),
   ];
 }
