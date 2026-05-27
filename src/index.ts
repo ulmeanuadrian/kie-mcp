@@ -9,10 +9,14 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 import { loadConfig, Config } from './config.js';
 import { buildServer } from './server.js';
+import { KieClient } from './client.js';
+import { buildKieTools } from './tools.js';
 
 async function main(): Promise<void> {
   const config: Config = loadConfig(process.env);
-  const server: Server = buildServer(config);
+  const client = new KieClient(config);
+  const tools = buildKieTools({ client, config });
+  const server: Server = buildServer(config, tools);
   const transport = new StdioServerTransport();
   await server.connect(transport);
 }
