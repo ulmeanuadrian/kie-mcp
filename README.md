@@ -32,18 +32,39 @@ Sau ruleaza prin `npx`:
 }
 ```
 
-## Tool-uri
+## Tool-uri (10 total)
 
 | Tool | Scop |
 |---|---|
-| `kie_image` | Generare / editare imagine cu model la alegere (nano-banana, flux, seedream, qwen, gpt-image, midjourney, etc.) |
-| `kie_video` | Generare video (veo, sora, runway, kling, seedance, hailuo, wan, etc.) cu sync-wait opt-out |
-| `kie_music` | Generare muzicala (suno) |
-| `kie_speech` | TTS si sound effects (elevenlabs) |
-| `kie_compare` | Ruleaza acelasi prompt pe mai multe modele in paralel pentru selectie |
-| `kie_wait` | Asteapta un task_id existent pana ready |
-| `kie_assets` | List / cleanup pentru asset-urile descarcate local |
-| `kie_cost_report` | Cost cumulativ pe sesiune si pe model |
+| `kie_image` | Generare / editare imagine. Default `wait:true, download:true`. |
+| `kie_video` | Generare video. Default `wait:true, download:true`. |
+| `kie_music` | Generare muzicala (suno). |
+| `kie_speech` | TTS si sound effects (elevenlabs). |
+| `kie_compare` | Ruleaza acelasi prompt pe N modele paralel (cap 4). Same-kind only. |
+| `kie_wait` | Asteapta un task_id existent pana ready si descarca. |
+| `kie_status` | Stare instant a unui task fara polling. |
+| `kie_assets` | Lista task-uri din DB local cu filtre `model`/`state`. |
+| `kie_cost_report` | Cost cumulativ all-time sau pe window de ore + buget remaining. |
+| `kie_models` | Catalogul modelelor inregistrate (id, kind, family, descriere). |
+| `kie_health` | Probe de health + config echoed. |
+
+## Modele inregistrate (status verificare)
+
+| Model | Kind | Endpoint family | Verificat live |
+|---|---|---|---|
+| `nano-banana-2` | image | unified | ✅ 2026-05-27 (smoke real) |
+| `flux-kontext-pro` | image | unified | docs only |
+| `flux-kontext-max` | image | unified | docs only |
+| `gpt-image-2` | image | gpt4o legacy | docs only |
+| `seedream-v5-lite` | image | unified | docs only |
+| `qwen-image` | image | unified | ⚠️ ID-ul nu a fost acceptat pe API (mai 2026); verifica catalogul kie.ai |
+| `veo3`, `veo3_fast` | video | veo legacy | docs only |
+| `runway-aleph` | video | runway legacy | docs only |
+| `seedance-2` | video | unified | docs only |
+| `suno-v5`, `suno-v4-5` | music | suno legacy | docs only |
+| `elevenlabs-tts`, `elevenlabs-sfx` | speech | unified | docs only |
+
+Cand un ID intoarce `422: model name not supported`, foloseste `kie_models` ca sa vezi catalogul curent si actualizeaza `src/registry.ts` cu numele exact din kie.ai.
 
 ## Configuration
 
@@ -73,9 +94,41 @@ MCP client → src/index.ts (tool routing)
 ```bash
 npm install
 npm run build
-npm test          # unit
-npm run eval      # eval gate, mocked
-npm run eval:live # eval gate, hits real kie.ai API (needs KIE_API_KEY)
+npm run typecheck
+npm run eval       # 47 evals across 5 phases (mocked) — should be 47/47 green
+npm run eval:live  # adds 2 live calls to kie.ai (needs KIE_API_KEY, costs ~$0.04)
+```
+
+## Eval phases
+
+| Phase | Eval file | Tests | Verifica |
+|---|---|---|---|
+| 0 | `phase0_scaffold.eval.ts` | 6 | Server boot, config validation, MCP round-trip |
+| 1 | `phase1_client.eval.ts` | 11 | KieClient serialize/retry/parse pentru toate 5 familii |
+| 2 | `phase2_tools.eval.ts` | 12 | Tool discovery, dispatch routing, cross-kind guard, Zod validation |
+| 3 | `phase3_wait_download.eval.ts` | 12 | Poller, downloader, store round-trip, idempotency, budget enforcement |
+| 4 | `phase4_telemetry_compare.eval.ts` | 5 | kie_compare paralel + graceful degrade, cost report aggregation |
+| 5 | `phase5_live_smoke.eval.ts` | 2 (gated) | Apel real kie.ai → asset descarcat + cost logged |
+
+**Eval-urile sunt sursa de adevar pentru contract — orice change la cod trebuie sa pastreze 47/47 green (sau sa actualizeze eval-urile cu motiv explicit in commit message).**
+
+## Architecture
+
+```
+MCP client
+   ↓ stdio
+src/index.ts ── boot, wire dependencies
+src/server.ts ── MCP request routing (tools/list, tools/call)
+src/tools.ts ── 10 tool handlers (umbrella + utility + telemetry)
+   ↓
+src/registry.ts ── MODEL_REGISTRY (id → endpoint family + Zod schema + cost estimator)
+   ↓
+src/client.ts ── KieClient (fetch + retry + timeout + idempotency-key)
+src/endpoints.ts ── 5 endpoint families (unified, veo, runway, suno, gpt4o)
+   ↓
+src/poller.ts ── pollUntilTerminal (waiting → success/fail)
+src/downloader.ts ── AssetDownloader (URL → KIE_OUTPUT_DIR/<task_id>.<ext>)
+src/store.ts ── TaskStore (node:sqlite — tasks + idempotency + cost)
 ```
 
 ## License
