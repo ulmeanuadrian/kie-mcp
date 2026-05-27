@@ -49,7 +49,7 @@ describe('Phase 0 — scaffold eval', () => {
       params: { name: 'kie_health', arguments: {} },
     })) as { content: Array<{ type: string; text: string }> };
     const parsed = JSON.parse(callResult.content[0].text);
-    expect(parsed.package).toBe('@robos/kie-mcp');
+    expect(parsed.package).toBe('@ulmeanuadrian/kie-mcp');
     expect(parsed.api_key_set).toBe(true);
   });
 
