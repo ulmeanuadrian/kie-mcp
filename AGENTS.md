@@ -1,4 +1,4 @@
-# Agent guidelines — @ulmeanua/kie-mcp
+# Agent guidelines — @ulmeanuadrian/kie-mcp
 
 Scope: modern MCP server for kie.ai, written from scratch (zero copy from other implementations), designed around four differentiators:
 
