@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.env
+.env.local
+*.log
+.DS_Store
+coverage/
+.kie-mcp-test/
+tests/.tmp/
+evals/.tmp/
