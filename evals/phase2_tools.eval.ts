@@ -1,13 +1,29 @@
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { mkdtempSync, rmSync } from 'node:fs';
 import { loadConfig } from '../src/config.js';
 import { KieClient, FetchLike } from '../src/client.js';
 import { buildServer } from '../src/server.js';
 import { buildKieTools } from '../src/tools.js';
+import { TaskStore } from '../src/store.js';
+import { AssetDownloader } from '../src/downloader.js';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { MODEL_REGISTRY } from '../src/registry.js';
+
+const tmpRoot = mkdtempSync(join(tmpdir(), 'kie-mcp-phase2-'));
+afterAll(() => {
+  try {
+    rmSync(tmpRoot, { recursive: true, force: true });
+  } catch {
+    // ignore Windows lock contention on teardown
+  }
+});
 
 const baseEnv: NodeJS.ProcessEnv = {
   KIE_API_KEY: 'sk-test-eval-key',
   KIE_API_BASE: 'https://api.test.kie.ai/api/v1',
+  KIE_DB_PATH: join(tmpRoot, 'state.db'),
+  KIE_OUTPUT_DIR: join(tmpRoot, 'assets'),
 };
 
 function mockFetch(steps: Array<{ status: number; body: unknown }>): {
@@ -30,14 +46,19 @@ function mockFetch(steps: Array<{ status: number; body: unknown }>): {
   return { fetch: fn, calls };
 }
 
+let dbCounter = 0;
 function setupServer(steps: Array<{ status: number; body: unknown }>): {
   server: Server;
   calls: Array<{ url: string; init?: RequestInit }>;
 } {
-  const config = loadConfig(baseEnv);
+  dbCounter++;
+  const env = { ...baseEnv, KIE_DB_PATH: join(tmpRoot, `state-${dbCounter}.db`) };
+  const config = loadConfig(env);
   const { fetch, calls } = mockFetch(steps);
   const client = new KieClient(config, fetch);
-  const tools = buildKieTools({ client, config });
+  const store = new TaskStore(config.dbPath);
+  const downloader = new AssetDownloader(config.outputDir);
+  const tools = buildKieTools({ client, config, store, downloader });
   const server = buildServer(config, tools);
   return { server, calls };
 }
@@ -96,6 +117,7 @@ describe('Phase 2 — umbrella tools eval', () => {
     const result = await callTool(server, 'kie_image', {
       model: 'nano-banana-2',
       input: { prompt: 'a serene mountain at dawn', resolution: '2K' },
+      wait: false,
     });
     const parsed = JSON.parse(result.content[0].text);
     expect(parsed.task_id).toBe('tsk_nb_1');
@@ -115,6 +137,7 @@ describe('Phase 2 — umbrella tools eval', () => {
     const result = await callTool(server, 'kie_video', {
       model: 'veo3',
       input: { prompt: 'a sunset over Bucharest', aspect_ratio: '16:9' },
+      wait: false,
     });
     const parsed = JSON.parse(result.content[0].text);
     expect(parsed.task_id).toBe('tsk_veo_1');
@@ -130,6 +153,7 @@ describe('Phase 2 — umbrella tools eval', () => {
     const result = await callTool(server, 'kie_music', {
       model: 'suno-v5',
       input: { prompt: 'an upbeat lo-fi piano track', instrumental: true },
+      wait: false,
     });
     const parsed = JSON.parse(result.content[0].text);
     expect(parsed.task_id).toBe('tsk_suno_1');
@@ -177,6 +201,7 @@ describe('Phase 2 — umbrella tools eval', () => {
         prompt: 'restyle this',
         image_input: ['https://example.com/a.jpg', 'https://example.com/b.jpg'],
       },
+      wait: false,
     });
     const body = JSON.parse(calls[0].init?.body as string);
     expect(body.input.image_input).toEqual([

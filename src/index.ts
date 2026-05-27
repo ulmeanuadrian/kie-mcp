@@ -10,12 +10,16 @@ import {
 import { loadConfig, Config } from './config.js';
 import { buildServer } from './server.js';
 import { KieClient } from './client.js';
+import { AssetDownloader } from './downloader.js';
+import { TaskStore } from './store.js';
 import { buildKieTools } from './tools.js';
 
 async function main(): Promise<void> {
   const config: Config = loadConfig(process.env);
   const client = new KieClient(config);
-  const tools = buildKieTools({ client, config });
+  const store = new TaskStore(config.dbPath);
+  const downloader = new AssetDownloader(config.outputDir);
+  const tools = buildKieTools({ client, config, store, downloader });
   const server: Server = buildServer(config, tools);
   const transport = new StdioServerTransport();
   await server.connect(transport);
