@@ -1,35 +1,35 @@
-# Instalare @robos/kie-mcp — ghid pas cu pas
+# Install @robos/kie-mcp — step-by-step guide
 
-Acest MCP server iti da acces la **30+ modele AI** prin Kie.ai (Veo, Suno, Runway, Flux, Nano Banana, ElevenLabs, Midjourney, etc.) direct din Claude Desktop / Claude Code / Cursor / Windsurf. Cost mai mic decat API-urile oficiale, polling automat, asset descarcat local.
+This MCP server gives you access to **30+ AI models** through Kie.ai (Veo, Suno, Runway, Flux, Nano Banana, ElevenLabs, Midjourney, etc.) directly inside Claude Desktop / Claude Code / Cursor / Windsurf. Lower cost than the official APIs, automatic polling, asset downloaded locally.
 
 ---
 
-## 1. Cere o cheie Kie.ai
+## 1. Get a Kie.ai API key
 
-Mergi la [kie.ai/api-key](https://kie.ai/api-key), creeaza un cont si copiaza cheia. Forma: 32 caractere hex (litere a-f + cifre).
+Go to [kie.ai/api-key](https://kie.ai/api-key), create an account and copy the key. Format: 32 hex characters (a–f + digits).
 
-Tip: Kie.ai are credite gratuite de bun-venit. Pentru testul tau initial (nano-banana-2 la 1K) costa ~$0.04 — incape lejer in free tier.
+Tip: Kie.ai gives free welcome credits. Your first test call (nano-banana-2 at 1K) costs ~$0.04 — well within the free tier.
 
-## 2. Verifica Node.js
+## 2. Check Node.js
 
 ```bash
 node --version
 ```
 
-Trebuie sa fie **22.0 sau mai recent**. Daca ai mai vechi:
+You need **22.0 or newer**. If older:
 - Windows: [nodejs.org](https://nodejs.org) → download LTS
 - macOS: `brew install node@22`
 - Linux: [nodejs.org/en/download](https://nodejs.org/en/download)
 
-## 3. Configurare in clientul tau MCP
+## 3. Configure in your MCP client
 
 ### Claude Desktop
 
-Editeaza fisierul de config:
+Edit the config file:
 - **Mac**: `~/Library/Application Support/Claude/claude_desktop_config.json`
 - **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
 
-Adauga (sau insereaza in `mcpServers`):
+Add (or merge into `mcpServers`):
 
 ```json
 {
@@ -38,22 +38,22 @@ Adauga (sau insereaza in `mcpServers`):
       "command": "npx",
       "args": ["-y", "@robos/kie-mcp"],
       "env": {
-        "KIE_API_KEY": "cheia-ta-de-la-kie-aici"
+        "KIE_API_KEY": "your-kie-key-here"
       }
     }
   }
 }
 ```
 
-Restart Claude Desktop. La urmatoarea conversatie ar trebui sa vezi tool-urile `kie_*` disponibile.
+Restart Claude Desktop. On your next conversation, the `kie_*` tools should be available.
 
 ### Claude Code
 
-In setarile MCP din Claude Code, adauga acelasi snippet ca mai sus.
+In Claude Code's MCP settings, add the same snippet as above.
 
 ### Cursor
 
-Edit `~/.cursor/mcp.json` (Mac/Linux) sau `%USERPROFILE%\.cursor\mcp.json` (Windows):
+Edit `~/.cursor/mcp.json` (Mac/Linux) or `%USERPROFILE%\.cursor\mcp.json` (Windows):
 
 ```json
 {
@@ -62,7 +62,7 @@ Edit `~/.cursor/mcp.json` (Mac/Linux) sau `%USERPROFILE%\.cursor\mcp.json` (Wind
       "command": "npx",
       "args": ["-y", "@robos/kie-mcp"],
       "env": {
-        "KIE_API_KEY": "cheia-ta-aici"
+        "KIE_API_KEY": "your-key-here"
       }
     }
   }
@@ -73,32 +73,32 @@ Restart Cursor.
 
 ### Windsurf
 
-Edit `~/.codeium/windsurf/mcp_config.json` cu acelasi snippet.
+Edit `~/.codeium/windsurf/mcp_config.json` with the same snippet.
 
-## 4. Test rapid
+## 4. Quick test
 
-In oricare client MCP (dupa restart), spune-i AI-ului:
+In any MCP client (after restart), tell the AI:
 
-> "Foloseste kie_health ca sa-mi arati ca MCP-ul ruleaza."
+> "Use kie_health to show me the server is running."
 
-Daca raspunde cu un JSON cu `package: @robos/kie-mcp` si `api_key_set: true`, totul merge.
+If it replies with a JSON containing `package: @robos/kie-mcp` and `api_key_set: true`, you're set.
 
-Apoi:
+Then:
 
-> "Genereaza o imagine cu nano-banana-2: un mar rosu pe o masa de lemn."
+> "Generate an image with nano-banana-2: a red apple on a wooden table."
 
-AI-ul va apela `kie_image` cu `wait:true` (default), va astepta ~30-60s, va descarca asset-ul si iti va da calea locala unde il gasesti.
+The AI will call `kie_image` with `wait:true` (default), wait ~30–60s, download the asset and give you back the local path.
 
-## 5. Optionalele care merita stiute
+## 5. Optional environment variables
 
-| Env var | Default | Utilitate |
+| Env var | Default | What it does |
 |---|---|---|
-| `KIE_OUTPUT_DIR` | `$HOME/.kie-mcp/assets` | Unde se scriu asset-urile |
-| `KIE_COST_BUDGET_USD` | nu setat | Daca setezi (ex `5.00`), MCP-ul blocheaza calls cand depasesti |
-| `KIE_POLL_INTERVAL_MS` | `3000` | Pace polling-ului pentru video/music (3s default) |
-| `KIE_POLL_MAX_MS` | `600000` | Timeout polling (10 min default — videourile mari pot avea nevoie de mai mult) |
+| `KIE_OUTPUT_DIR` | `$HOME/.kie-mcp/assets` | Where downloaded assets are written |
+| `KIE_COST_BUDGET_USD` | not set | If set (e.g. `5.00`), MCP blocks calls past the cap |
+| `KIE_POLL_INTERVAL_MS` | `3000` | Polling cadence for video/music (3s default) |
+| `KIE_POLL_MAX_MS` | `600000` | Polling timeout (10 min default — large videos may need more) |
 
-Le adaugi in `env` din config-ul MCP:
+Add them in the MCP config's `env` block:
 
 ```json
 "env": {
@@ -110,50 +110,50 @@ Le adaugi in `env` din config-ul MCP:
 
 ## 6. Cost so far
 
-In orice moment poti intreba AI-ul:
+At any time, ask the AI:
 
-> "Ruleaza kie_cost_report."
+> "Run kie_cost_report."
 
-Iti spune cat ai cheltuit total + pe model + buget ramas (daca ai setat `KIE_COST_BUDGET_USD`).
+You get total spend + per-model breakdown + remaining budget (if `KIE_COST_BUDGET_USD` is set).
 
-## 7. Compare modele
+## 7. Compare models
 
-> "Foloseste kie_compare cu prompt='X' si models=['nano-banana-2','flux-kontext-pro','seedream-v5-lite']."
+> "Use kie_compare with prompt='X' and models=['nano-banana-2','flux-kontext-pro','seedream-v5-lite']."
 
-Ruleaza pe toate 3 in paralel si descarca grid. Util cand vrei sa alegi cel mai bun model pentru un anumit prompt.
+Runs all 3 in parallel and downloads the grid. Useful when picking the best model for a given prompt.
 
-## 8. Modele disponibile
+## 8. Available models
 
-Intreaba: `kie_models` (sau cu filtru de kind):
+Ask: `kie_models` (or filtered by kind):
 
-| Categorie | Modele inregistrate |
+| Category | Registered models |
 |---|---|
 | **Image** | nano-banana-2 ✅, flux-kontext-pro, flux-kontext-max, gpt-image-2, seedream-v5-lite, qwen-image* |
 | **Video** | veo3, veo3_fast, runway-aleph, seedance-2 |
 | **Music** | suno-v5, suno-v4-5 |
 | **Speech** | elevenlabs-tts, elevenlabs-sfx |
 
-✅ = verificat live cu API-ul real. Restul vin din docs.kie.ai — daca primesti `422: model name not supported`, ID-ul curent in catalogul kie.ai e diferit; raporteaza issue.
+✅ = verified live against the real API. The rest come from docs.kie.ai — if you get `422: model name not supported`, the current ID in kie.ai's catalog is different; please open an issue.
 
-\* `qwen-image` nu a fost acceptat in mai 2026 — kie.ai foloseste alt ID; deschide un issue daca ai timp si stii care e numele real.
+\* `qwen-image` was not accepted in May 2026 — kie.ai uses a different ID; open an issue if you know the real name.
 
-## 9. Probleme frecvente
+## 9. Common issues
 
 **"Cannot find module '@robos/kie-mcp'"**
-→ Versiunea ta de Node e <22. Update Node.
+→ Your Node version is <22. Update Node.
 
 **"KIE_API_KEY is required"**
-→ Cheia nu e in `env` din MCP config. Verifica ca ai pus-o.
+→ The key isn't in the MCP config's `env`. Double-check.
 
 **"kie.ai error (code=401): Invalid API key"**
-→ Cheia e gresita sau a expirat. Regenereaza la kie.ai/api-key.
+→ The key is wrong or expired. Regenerate at kie.ai/api-key.
 
 **"polling timeout after 600000ms"**
-→ Modelul video ti-a luat >10 min. Mareste `KIE_POLL_MAX_MS` sau foloseste `wait:false` + `kie_wait` cu `timeout_ms` mai mare.
+→ The video model took >10 min. Increase `KIE_POLL_MAX_MS` or use `wait:false` + `kie_wait` with a larger `timeout_ms`.
 
 **"cost budget exceeded"**
-→ Featura merge. Sterge `KIE_COST_BUDGET_USD` din config sau mareste plafonul.
+→ The feature is working. Remove `KIE_COST_BUDGET_USD` from config or raise the cap.
 
-## 10. Issues / contributii
+## 10. Issues / contributions
 
-Repo public la **https://github.com/ulmeanuadrian/kie-mcp**. Issues bine-venite. Commit-uri si PR-uri cu eval-uri verzi (47/47 mocked + 2 live).
+Public repo at **https://github.com/ulmeanuadrian/kie-mcp**. Issues welcome. PRs require green evals (47/47 mocked + 2 live).

@@ -1,14 +1,14 @@
 # @robos/kie-mcp
 
-MCP server pentru [kie.ai](https://kie.ai) — un agregator de modele generative (Veo, Suno, Runway, Flux, Nano Banana, Midjourney, ElevenLabs, etc.) cu preturi mai mici decat API-urile oficiale.
+MCP server for [kie.ai](https://kie.ai) — an aggregator for generative media models (Veo, Suno, Runway, Flux, Nano Banana, Midjourney, ElevenLabs, etc.) with prices well below the official APIs.
 
-**Diferentiatori fata de alte MCP-uri kie.ai:**
+**What sets this server apart:**
 
-1. **Sync-wait built-in.** `kie_video(...)` asteapta task-ul si descarca asset-ul. Fara polling manual.
-2. **Auto-download.** Fiecare task ready scrie fisierul local intr-un path predictabil; tool-ul returneaza calea absoluta, nu URL care expira.
-3. **Cinci tool-uri umbrela.** `kie_image`, `kie_video`, `kie_music`, `kie_speech`, `kie_compare` — dispatcher pe `model`. Nu 24 de tool-uri care umfla context-ul MCP.
-4. **Cost telemetry.** `kie_cost_report` arata cat ai cheltuit pe sesiune, model si total. Optional `KIE_COST_BUDGET_USD` opreste apelurile peste plafon.
-5. **Batch & compare.** `kie_compare(prompt, models=[...])` ruleaza paralel pe N modele si returneaza un grid de rezultate.
+1. **Sync-wait built-in.** `kie_video(...)` polls the task to completion and downloads the asset locally. No manual polling loop.
+2. **Auto-download.** Every successful task writes the file to a predictable local path; the tool returns the absolute path, not a URL that expires.
+3. **Five umbrella tools.** `kie_image`, `kie_video`, `kie_music`, `kie_speech`, `kie_compare` — dispatch by `model` param. Not 24 separate tools bloating your MCP context.
+4. **Cost telemetry.** `kie_cost_report` shows session + per-model + total spend. Optional `KIE_COST_BUDGET_USD` blocks calls past the cap.
+5. **Batch & compare.** `kie_compare(prompt, models=[...])` runs the same prompt on N models in parallel and returns a grid of results.
 
 ## Install
 
@@ -16,7 +16,7 @@ MCP server pentru [kie.ai](https://kie.ai) — un agregator de modele generative
 npm install -g @robos/kie-mcp
 ```
 
-Sau ruleaza prin `npx`:
+Or run via `npx` from your MCP client config:
 
 ```json
 {
@@ -32,62 +32,54 @@ Sau ruleaza prin `npx`:
 }
 ```
 
-## Tool-uri (10 total)
+Detailed step-by-step install instructions for Claude Desktop, Claude Code, Cursor, and Windsurf are in [INSTALL.md](./INSTALL.md).
 
-| Tool | Scop |
+## Tools (11 total)
+
+| Tool | Purpose |
 |---|---|
-| `kie_image` | Generare / editare imagine. Default `wait:true, download:true`. |
-| `kie_video` | Generare video. Default `wait:true, download:true`. |
-| `kie_music` | Generare muzicala (suno). |
-| `kie_speech` | TTS si sound effects (elevenlabs). |
-| `kie_compare` | Ruleaza acelasi prompt pe N modele paralel (cap 4). Same-kind only. |
-| `kie_wait` | Asteapta un task_id existent pana ready si descarca. |
-| `kie_status` | Stare instant a unui task fara polling. |
-| `kie_assets` | Lista task-uri din DB local cu filtre `model`/`state`. |
-| `kie_cost_report` | Cost cumulativ all-time sau pe window de ore + buget remaining. |
-| `kie_models` | Catalogul modelelor inregistrate (id, kind, family, descriere). |
-| `kie_health` | Probe de health + config echoed. |
+| `kie_image` | Generate / edit an image. Defaults to `wait:true, download:true`. |
+| `kie_video` | Generate a video. Defaults to `wait:true, download:true`. |
+| `kie_music` | Generate music (Suno). |
+| `kie_speech` | TTS and sound effects (ElevenLabs). |
+| `kie_compare` | Run the same prompt across N models in parallel (cap 4). Same-kind only. |
+| `kie_wait` | Wait for an existing task_id until it terminates and download. |
+| `kie_status` | Get current state of a task without polling. |
+| `kie_assets` | List tasks from the local DB filtered by `model` / `state`. |
+| `kie_cost_report` | Cumulative cost (all-time or hours window) + budget remaining. |
+| `kie_models` | List registered models (id, kind, family, description). |
+| `kie_health` | Health probe + echoed config (api_key set / output dir / db path). |
 
-## Modele inregistrate (status verificare)
+## Registered models (verification status)
 
-| Model | Kind | Endpoint family | Verificat live |
+| Model | Kind | Endpoint family | Verified live |
 |---|---|---|---|
-| `nano-banana-2` | image | unified | ✅ 2026-05-27 (smoke real) |
+| `nano-banana-2` | image | unified | ✅ 2026-05-27 (live smoke) |
 | `flux-kontext-pro` | image | unified | docs only |
 | `flux-kontext-max` | image | unified | docs only |
 | `gpt-image-2` | image | gpt4o legacy | docs only |
 | `seedream-v5-lite` | image | unified | docs only |
-| `qwen-image` | image | unified | ⚠️ ID-ul nu a fost acceptat pe API (mai 2026); verifica catalogul kie.ai |
+| `qwen-image` | image | unified | ⚠️ this ID was not accepted on the API (May 2026); check the current kie.ai catalog |
 | `veo3`, `veo3_fast` | video | veo legacy | docs only |
 | `runway-aleph` | video | runway legacy | docs only |
 | `seedance-2` | video | unified | docs only |
 | `suno-v5`, `suno-v4-5` | music | suno legacy | docs only |
 | `elevenlabs-tts`, `elevenlabs-sfx` | speech | unified | docs only |
 
-Cand un ID intoarce `422: model name not supported`, foloseste `kie_models` ca sa vezi catalogul curent si actualizeaza `src/registry.ts` cu numele exact din kie.ai.
+When an ID returns `422: model name not supported`, query `kie_models` to see the registered catalog and update `src/registry.ts` with the exact name from kie.ai's market.
 
 ## Configuration
 
-| Env var | Implicit | Rol |
+| Env var | Default | Role |
 |---|---|---|
-| `KIE_API_KEY` | — | Obligatoriu. Cheia ta de la kie.ai |
+| `KIE_API_KEY` | — | Required. Your kie.ai key |
 | `KIE_API_BASE` | `https://api.kie.ai/api/v1` | Override base URL |
-| `KIE_TIMEOUT_MS` | `120000` | Timeout pe request HTTP |
-| `KIE_OUTPUT_DIR` | `$HOME/.kie-mcp/assets` | Unde se scriu asset-urile descarcate |
-| `KIE_DB_PATH` | `$HOME/.kie-mcp/state.db` | SQLite pentru task tracking + cost |
-| `KIE_POLL_INTERVAL_MS` | `3000` | Cat de des polleaza pentru task status |
+| `KIE_TIMEOUT_MS` | `120000` | HTTP request timeout |
+| `KIE_OUTPUT_DIR` | `$HOME/.kie-mcp/assets` | Where downloaded assets are written |
+| `KIE_DB_PATH` | `$HOME/.kie-mcp/state.db` | SQLite path for task tracking + cost |
+| `KIE_POLL_INTERVAL_MS` | `3000` | Polling cadence |
 | `KIE_POLL_MAX_MS` | `600000` | Polling cap (10 min) |
-| `KIE_COST_BUDGET_USD` | — | Daca e setat, opreste apeluri cand depasesti |
-
-## Architecture
-
-```
-MCP client → src/index.ts (tool routing)
-           → src/tools/*.ts (5 umbrella tools + utility)
-           → src/client.ts (KieClient — fetch + retry + polling)
-           → src/store.ts (SQLite — tasks, costs, idempotency)
-           → src/downloader.ts (asset persistence)
-```
+| `KIE_COST_BUDGET_USD` | — | When set, blocks calls after exceeding the cap |
 
 ## Development
 
@@ -101,16 +93,16 @@ npm run eval:live  # adds 2 live calls to kie.ai (needs KIE_API_KEY, costs ~$0.0
 
 ## Eval phases
 
-| Phase | Eval file | Tests | Verifica |
+| Phase | Eval file | Tests | Verifies |
 |---|---|---|---|
 | 0 | `phase0_scaffold.eval.ts` | 6 | Server boot, config validation, MCP round-trip |
-| 1 | `phase1_client.eval.ts` | 11 | KieClient serialize/retry/parse pentru toate 5 familii |
+| 1 | `phase1_client.eval.ts` | 11 | KieClient serialize / retry / parse across all 5 endpoint families |
 | 2 | `phase2_tools.eval.ts` | 12 | Tool discovery, dispatch routing, cross-kind guard, Zod validation |
 | 3 | `phase3_wait_download.eval.ts` | 12 | Poller, downloader, store round-trip, idempotency, budget enforcement |
-| 4 | `phase4_telemetry_compare.eval.ts` | 5 | kie_compare paralel + graceful degrade, cost report aggregation |
-| 5 | `phase5_live_smoke.eval.ts` | 2 (gated) | Apel real kie.ai → asset descarcat + cost logged |
+| 4 | `phase4_telemetry_compare.eval.ts` | 5 | kie_compare parallel + graceful degrade, cost report aggregation |
+| 5 | `phase5_live_smoke.eval.ts` | 2 (gated) | Real kie.ai call → asset downloaded + cost logged |
 
-**Eval-urile sunt sursa de adevar pentru contract — orice change la cod trebuie sa pastreze 47/47 green (sau sa actualizeze eval-urile cu motiv explicit in commit message).**
+**Evals are the source of truth for the contract — any code change must keep 47/47 mocked evals green (or update the evals with an explicit reason in the commit message).**
 
 ## Architecture
 
@@ -119,7 +111,7 @@ MCP client
    ↓ stdio
 src/index.ts ── boot, wire dependencies
 src/server.ts ── MCP request routing (tools/list, tools/call)
-src/tools.ts ── 10 tool handlers (umbrella + utility + telemetry)
+src/tools.ts ── 11 tool handlers (umbrella + utility + telemetry)
    ↓
 src/registry.ts ── MODEL_REGISTRY (id → endpoint family + Zod schema + cost estimator)
    ↓
@@ -133,4 +125,4 @@ src/store.ts ── TaskStore (node:sqlite — tasks + idempotency + cost)
 
 ## License
 
-MIT. Vezi [LICENSE](./LICENSE).
+MIT. See [LICENSE](./LICENSE).
