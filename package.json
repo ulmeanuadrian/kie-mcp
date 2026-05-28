@@ -1,6 +1,6 @@
 {
   "name": "@ulmeanuadrian/kie-mcp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "MCP server for Kie.ai. Sync-wait, auto-download, batch compare, cost telemetry. Five umbrella tools (kie_image, kie_video, kie_music, kie_speech, kie_compare) dispatch across 30+ providers.",
   "type": "module",
   "main": "dist/index.js",

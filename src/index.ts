@@ -7,6 +7,7 @@ import {
   ErrorCode,
   McpError,
 } from '@modelcontextprotocol/sdk/types.js';
+import { loadDotenvFallback } from './env-loader.js';
 import { loadConfig, Config } from './config.js';
 import { buildServer } from './server.js';
 import { KieClient } from './client.js';
@@ -15,6 +16,7 @@ import { TaskStore } from './store.js';
 import { buildKieTools } from './tools.js';
 
 async function main(): Promise<void> {
+  loadDotenvFallback();
   const config: Config = loadConfig(process.env);
   const client = new KieClient(config);
   const store = new TaskStore(config.dbPath);
