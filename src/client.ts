@@ -53,6 +53,61 @@ export class KieClient {
     return { taskId };
   }
 
+  /**
+   * Upload a base64 data URI to kie.ai's file endpoint and return the public
+   * download URL. Lives on a separate host (config.uploadBase), so it does NOT
+   * go through `request()` (which prepends apiBase). Reuses the Bearer token.
+   */
+  async uploadBase64(
+    dataUri: string,
+    fileName: string,
+    uploadPath: string,
+  ): Promise<{ url: string; size_bytes?: number; mime_type?: string }> {
+    const url = `${this.config.uploadBase}/file-base64-upload`;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), this.config.timeoutMs);
+    try {
+      const response = await this.fetchImpl(url, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${this.config.apiKey}`,
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({ base64Data: dataUri, uploadPath, fileName }),
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+      const text = await response.text();
+      let parsed: { success?: boolean; code?: number; msg?: string; data?: Record<string, unknown> };
+      try {
+        parsed = text ? JSON.parse(text) : {};
+      } catch {
+        throw new KieApiError(response.status, null, `upload returned non-JSON (${response.status}): ${text.slice(0, 200)}`);
+      }
+      const data = parsed.data ?? {};
+      const downloadUrl = typeof data.downloadUrl === 'string' ? data.downloadUrl : '';
+      if (!response.ok || !downloadUrl) {
+        throw new KieApiError(
+          response.status,
+          parsed.code ?? null,
+          `kie.ai upload failed (${response.status}): ${parsed.msg ?? 'no downloadUrl'}`,
+          parsed,
+        );
+      }
+      return {
+        url: downloadUrl,
+        size_bytes: typeof data.fileSize === 'number' ? data.fileSize : undefined,
+        mime_type: typeof data.mimeType === 'string' ? data.mimeType : undefined,
+      };
+    } catch (err) {
+      clearTimeout(timeoutId);
+      if (err instanceof KieApiError) throw err;
+      const msg = err instanceof Error ? err.message : String(err);
+      throw new KieTransientError(`upload request failed: ${msg}`, err);
+    }
+  }
+
   async getTaskStatus(
     endpoint: EndpointSpec,
     taskId: string,

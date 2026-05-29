@@ -4,6 +4,7 @@ import { join } from 'node:path';
 export interface Config {
   apiKey: string;
   apiBase: string;
+  uploadBase: string;
   timeoutMs: number;
   outputDir: string;
   dbPath: string;
@@ -14,6 +15,8 @@ export interface Config {
 
 const DEFAULTS = {
   apiBase: 'https://api.kie.ai/api/v1',
+  // File upload lives on a separate host from the generation API.
+  uploadBase: 'https://kieai.redpandaai.co/api',
   timeoutMs: 120_000,
   pollIntervalMs: 3_000,
   pollMaxMs: 600_000,
@@ -40,6 +43,7 @@ export function loadConfig(env: NodeJS.ProcessEnv): Config {
   return {
     apiKey,
     apiBase: env.KIE_API_BASE?.trim() || DEFAULTS.apiBase,
+    uploadBase: env.KIE_UPLOAD_BASE?.trim() || DEFAULTS.uploadBase,
     timeoutMs: parseIntOr(env.KIE_TIMEOUT_MS, DEFAULTS.timeoutMs),
     outputDir,
     dbPath,

@@ -1,4 +1,6 @@
 import { z } from 'zod';
+import { readFile } from 'node:fs/promises';
+import { basename, extname } from 'node:path';
 import { Config } from './config.js';
 import { KieClient } from './client.js';
 import { AssetDownloader, DownloadResult } from './downloader.js';
@@ -537,6 +539,105 @@ function buildCostReportTool(ctx: ToolCtx): ToolHandler {
   };
 }
 
+const MIME_BY_EXT: Record<string, string> = {
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.png': 'image/png',
+  '.webp': 'image/webp',
+  '.gif': 'image/gif',
+  '.bmp': 'image/bmp',
+  '.heic': 'image/heic',
+  '.mp4': 'video/mp4',
+  '.webm': 'video/webm',
+  '.mov': 'video/quicktime',
+  '.mp3': 'audio/mpeg',
+  '.wav': 'audio/wav',
+  '.m4a': 'audio/mp4',
+};
+
+// kie.ai upload accepts generous sizes, but guard against accidental huge payloads.
+const UPLOAD_MAX_BYTES = 25 * 1024 * 1024;
+
+function sanitizeFileName(name: string): string {
+  return basename(name).replace(/[^\w.\-]/g, '_') || 'upload';
+}
+
+function buildUploadTool(ctx: ToolCtx): ToolHandler {
+  return {
+    name: 'kie_upload',
+    description:
+      "Upload a local file (or base64/data URI) to kie.ai and return a public download URL usable in image_input / video reference fields. kie.ai's generation tools require PUBLIC http(s) URLs — local paths, file:// and data: URIs are rejected by the generation API. Use this first when you have a local reference image. If you pass an already-public http(s) url, it is returned as-is (passthrough).",
+    inputSchema: {
+      type: 'object',
+      properties: {
+        path: { type: 'string', description: 'Local file path to read and upload.' },
+        base64: {
+          type: 'string',
+          description: 'Raw base64 or a full data: URI to upload directly (instead of path).',
+        },
+        url: {
+          type: 'string',
+          description: 'An already-public http(s) URL — returned as-is (passthrough convenience).',
+        },
+        file_name: { type: 'string', description: 'Override the stored file name.' },
+        upload_path: {
+          type: 'string',
+          description: 'Remote folder prefix (default "images/user-upload").',
+        },
+      },
+      additionalProperties: false,
+    },
+    async handle(args) {
+      const parsed = z
+        .object({
+          path: z.string().min(1).optional(),
+          base64: z.string().min(1).optional(),
+          url: z.string().url().optional(),
+          file_name: z.string().min(1).optional(),
+          upload_path: z.string().min(1).optional().default('images/user-upload'),
+        })
+        .parse(args);
+
+      if (parsed.url) {
+        return { url: parsed.url, passthrough: true };
+      }
+      if (!parsed.path && !parsed.base64) {
+        throw new Error('kie_upload requires one of: path, base64, or url');
+      }
+
+      let dataUri: string;
+      let fileName: string;
+      let sizeBytes: number | undefined;
+
+      if (parsed.path) {
+        const buf = await readFile(parsed.path);
+        if (buf.byteLength > UPLOAD_MAX_BYTES) {
+          throw new Error(
+            `file too large: ${buf.byteLength} bytes > ${UPLOAD_MAX_BYTES} (resize before upload)`,
+          );
+        }
+        sizeBytes = buf.byteLength;
+        const ext = extname(parsed.path).toLowerCase();
+        const mime = MIME_BY_EXT[ext] ?? 'application/octet-stream';
+        dataUri = `data:${mime};base64,${buf.toString('base64')}`;
+        fileName = sanitizeFileName(parsed.file_name ?? parsed.path);
+      } else {
+        const b64 = parsed.base64!;
+        dataUri = b64.startsWith('data:') ? b64 : `data:image/jpeg;base64,${b64}`;
+        fileName = sanitizeFileName(parsed.file_name ?? 'upload.jpg');
+      }
+
+      const res = await ctx.client.uploadBase64(dataUri, fileName, parsed.upload_path);
+      return {
+        url: res.url,
+        file_name: fileName,
+        size_bytes: res.size_bytes ?? sizeBytes,
+        mime_type: res.mime_type,
+      };
+    },
+  };
+}
+
 export function buildKieTools(ctx: ToolCtx): ToolHandler[] {
   return [
     buildSubmitTool('kie_image', 'image', ['image'], ctx),
@@ -544,6 +645,7 @@ export function buildKieTools(ctx: ToolCtx): ToolHandler[] {
     buildSubmitTool('kie_music', 'music', ['music'], ctx),
     buildSubmitTool('kie_speech', 'speech/sfx', ['speech', 'sfx'], ctx),
     buildCompareTool(ctx),
+    buildUploadTool(ctx),
     buildWaitTool(ctx),
     buildStatusTool(ctx),
     buildAssetsTool(ctx),

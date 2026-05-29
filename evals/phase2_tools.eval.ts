@@ -106,7 +106,56 @@ describe('Phase 2 — umbrella tools eval', () => {
         'kie_speech',
         'kie_status',
         'kie_models',
+        'kie_upload',
       ]),
+    );
+  });
+
+  test('kie_upload returns public http(s) url as-is (passthrough)', async () => {
+    const { server, calls } = setupServer([]);
+    const result = await callTool(server, 'kie_upload', {
+      url: 'https://cdn.example.com/already-public.jpg',
+    });
+    const parsed = JSON.parse(result.content[0].text);
+    expect(parsed.url).toBe('https://cdn.example.com/already-public.jpg');
+    expect(parsed.passthrough).toBe(true);
+    expect(calls.length).toBe(0); // no network call for passthrough
+  });
+
+  test('kie_upload posts base64 to file-base64-upload and returns downloadUrl', async () => {
+    const { server, calls } = setupServer([
+      {
+        status: 200,
+        body: {
+          success: true,
+          code: 200,
+          msg: 'File uploaded successfully',
+          data: {
+            downloadUrl: 'https://tempfile.redpandaai.co/kieai/1/images/user-upload/x.jpg',
+            fileSize: 123,
+            mimeType: 'image/jpeg',
+          },
+        },
+      },
+    ]);
+    const result = await callTool(server, 'kie_upload', {
+      base64: 'aGVsbG8=',
+      file_name: 'x.jpg',
+    });
+    const parsed = JSON.parse(result.content[0].text);
+    expect(parsed.url).toBe('https://tempfile.redpandaai.co/kieai/1/images/user-upload/x.jpg');
+    expect(parsed.mime_type).toBe('image/jpeg');
+    expect(calls[0].url).toBe('https://kieai.redpandaai.co/api/file-base64-upload');
+    const body = JSON.parse(calls[0].init?.body as string);
+    expect(body.base64Data).toBe('data:image/jpeg;base64,aGVsbG8='); // raw b64 wrapped as data URI
+    expect(body.uploadPath).toBe('images/user-upload'); // default
+    expect(body.fileName).toBe('x.jpg');
+  });
+
+  test('kie_upload requires one of path/base64/url', async () => {
+    const { server } = setupServer([]);
+    await expect(callTool(server, 'kie_upload', {})).rejects.toThrow(
+      /requires one of: path, base64, or url/,
     );
   });
 

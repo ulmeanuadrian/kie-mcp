@@ -34,7 +34,7 @@ Or run via `npx` from your MCP client config:
 
 Detailed step-by-step install instructions for Claude Desktop, Claude Code, Cursor, and Windsurf are in [INSTALL.md](./INSTALL.md).
 
-## Tools (11 total)
+## Tools (12 total)
 
 | Tool | Purpose |
 |---|---|
@@ -43,6 +43,7 @@ Detailed step-by-step install instructions for Claude Desktop, Claude Code, Curs
 | `kie_music` | Generate music (Suno). |
 | `kie_speech` | TTS and sound effects (ElevenLabs). |
 | `kie_compare` | Run the same prompt across N models in parallel (cap 4). Same-kind only. |
+| `kie_upload` | Upload a local file (or base64) and get a public URL for `image_input`/reference fields. Generation tools reject local paths, `file://` and `data:` URIs — upload first. Passes through an already-public http(s) url. |
 | `kie_wait` | Wait for an existing task_id until it terminates and download. |
 | `kie_status` | Get current state of a task without polling. |
 | `kie_assets` | List tasks from the local DB filtered by `model` / `state`. |
@@ -111,7 +112,7 @@ MCP client
    ↓ stdio
 src/index.ts ── boot, wire dependencies
 src/server.ts ── MCP request routing (tools/list, tools/call)
-src/tools.ts ── 11 tool handlers (umbrella + utility + telemetry)
+src/tools.ts ── 12 tool handlers (umbrella + utility + telemetry)
    ↓
 src/registry.ts ── MODEL_REGISTRY (id → endpoint family + Zod schema + cost estimator)
    ↓
