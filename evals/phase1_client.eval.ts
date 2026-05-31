@@ -56,7 +56,7 @@ describe('Phase 1 — KieClient eval', () => {
     expect(headers.Authorization).toBe('Bearer sk-test-eval-key');
   });
 
-  test('createTask via veo legacy endpoint flattens body (no input wrapper)', async () => {
+  test('createTask via veo legacy endpoint flattens body with model (no input wrapper)', async () => {
     const { fetch, calls } = mockFetch([
       { status: 200, body: { code: 200, msg: 'success', data: { taskId: 'tsk_veo_001' } } },
     ]);
@@ -66,8 +66,22 @@ describe('Phase 1 — KieClient eval', () => {
       aspect_ratio: '16:9',
     });
     const body = JSON.parse(calls[0].init?.body as string);
-    expect(body).toEqual({ prompt: 'a sunset', aspect_ratio: '16:9' });
+    expect(body).toEqual({ model: 'veo3', prompt: 'a sunset', aspect_ratio: '16:9' });
     expect(calls[0].url).toBe('https://api.test.kie.ai/api/v1/veo/generate');
+  });
+
+  test('veo endpoint lets explicit input.model override the dispatched id', async () => {
+    const { fetch, calls } = mockFetch([
+      { status: 200, body: { code: 200, msg: 'success', data: { taskId: 'tsk_veo_002' } } },
+    ]);
+    const client = new KieClient(baseConfig, fetch);
+    await client.createTask(VEO_ENDPOINT, 'veo3', {
+      prompt: 'a sunset',
+      aspect_ratio: '9:16',
+      model: 'veo3_fast',
+    });
+    const body = JSON.parse(calls[0].init?.body as string);
+    expect(body).toEqual({ model: 'veo3_fast', prompt: 'a sunset', aspect_ratio: '9:16' });
   });
 
   test('createTask retries on 503 then succeeds', async () => {

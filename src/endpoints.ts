@@ -59,8 +59,12 @@ export const VEO_ENDPOINT: EndpointSpec = {
   family: 'veo',
   createPath: '/veo/generate',
   statusPath: (id) => `/veo/record-info?taskId=${encodeURIComponent(id)}`,
-  buildCreateBody(_model, input, callBackUrl) {
+  buildCreateBody(model, input, callBackUrl) {
+    // /veo/generate requires `model` as a flat body field. Without it kie
+    // returns "Invalid model" (422). input.model (if the caller set it
+    // explicitly) wins over the dispatched top-level id.
     return {
+      model,
       ...input,
       ...(callBackUrl ? { callBackUrl } : {}),
     };
