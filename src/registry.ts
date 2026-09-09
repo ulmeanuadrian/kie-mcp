@@ -126,13 +126,15 @@ const ElevenLabsTtsInputZ = z
   })
   .strict();
 
-const ElevenLabsSfxInputZ = z
-  .object({
-    text: z.string().min(1).max(450),
-    duration_seconds: z.number().min(0.5).max(22).optional(),
-    prompt_influence: z.number().min(0).max(1).optional(),
-  })
-  .strict();
+/**
+ * True when the caller supplied a reference image. kie.ai splits several models
+ * into separate text-to-image and image-to-image entries, while this server
+ * exposes one id whose `image_input` is optional.
+ */
+function hasImageInput(input: Record<string, unknown>): boolean {
+  const v = input.image_input;
+  return Array.isArray(v) && v.length > 0;
+}
 
 function flatRateCost(usd: number): () => number {
   return () => usd;
@@ -187,6 +189,10 @@ export const MODEL_REGISTRY: Record<string, ModelSpec> = {
     family: 'unified',
     description: 'ByteDance Seedream V5 Lite — 4K image generation.',
     inputSchema: SeedreamInputZ,
+    apiModel: (input) =>
+      hasImageInput(input)
+        ? 'seedream/5-lite-image-to-image'
+        : 'seedream/5-lite-text-to-image',
     estimateCostUsd: resolutionCost,
   },
   'qwen-image': {
@@ -195,6 +201,7 @@ export const MODEL_REGISTRY: Record<string, ModelSpec> = {
     family: 'unified',
     description: 'Alibaba Qwen Image — fast generation + edit.',
     inputSchema: QwenInputZ,
+    apiModel: (input) => (hasImageInput(input) ? 'qwen/image-edit' : 'qwen/text-to-image'),
     estimateCostUsd: flatRateCost(0.02),
   },
   veo3: {
@@ -232,6 +239,7 @@ export const MODEL_REGISTRY: Record<string, ModelSpec> = {
     family: 'unified',
     description: 'ByteDance Seedance 2.0 — multimodal video with native audio.',
     inputSchema: SeedanceInputZ,
+    apiModel: 'bytedance/seedance-2',
     estimateCostUsd: (input) => 0.06 * Number(input.duration ?? 5),
   },
   'suno-v5': {
@@ -256,18 +264,11 @@ export const MODEL_REGISTRY: Record<string, ModelSpec> = {
     family: 'unified',
     description: 'ElevenLabs studio-grade text-to-speech.',
     inputSchema: ElevenLabsTtsInputZ,
+    apiModel: 'elevenlabs/text-to-speech-multilingual-v2',
     estimateCostUsd: (input) => {
       const chars = String(input.text ?? '').length;
       return 0.00003 * chars;
     },
-  },
-  'elevenlabs-sfx': {
-    id: 'elevenlabs-sfx',
-    kind: 'sfx',
-    family: 'unified',
-    description: 'ElevenLabs sound-effects generator.',
-    inputSchema: ElevenLabsSfxInputZ,
-    estimateCostUsd: flatRateCost(0.02),
   },
 };
 

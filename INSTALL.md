@@ -117,14 +117,12 @@ Ask `kie_models` in your client to see the live catalog. Currently registered:
 
 | Category | Models |
 |---|---|
-| **Image** | nano-banana-2 ✅, flux-kontext-pro, flux-kontext-max, gpt-image-2, seedream-v5-lite, qwen-image\* |
+| **Image** | nano-banana-2, flux-kontext-pro, flux-kontext-max, gpt-image-2, seedream-v5-lite, qwen-image |
 | **Video** | veo3, veo3_fast, runway-aleph, seedance-2 |
 | **Music** | suno-v5, suno-v4-5 |
-| **Speech** | elevenlabs-tts, elevenlabs-sfx |
+| **Speech** | elevenlabs-tts |
 
-✅ verified live against the real API. The rest are mapped from Kie.ai docs — if you hit `422: model name not supported`, that ID was renamed by Kie.ai; please [open an issue](https://github.com/ulmeanuadrian/kie-mcp/issues).
-
-\* `qwen-image` was rejected by the API in May 2026 — Kie.ai uses a different ID; open an issue if you know which.
+Every model name this server sends was probed against the real API on 2026-09-09 and accepted. These ids are stable public names: when kie.ai renames a model, the mapping changes in `src/registry.ts` and your calls keep working. If you still hit `422: model name not supported`, kie.ai renamed something since; please [open an issue](https://github.com/ulmeanuadrian/kie-mcp/issues).
 
 ## 8. Cost so far
 

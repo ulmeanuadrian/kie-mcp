@@ -53,21 +53,39 @@ Detailed step-by-step install instructions for Claude Desktop, Claude Code, Curs
 
 ## Registered models (verification status)
 
-| Model | Kind | Endpoint family | Verified live |
-|---|---|---|---|
-| `nano-banana-2` | image | unified | ✅ 2026-05-27 (live smoke) |
-| `flux-kontext-pro` | image | unified | docs only |
-| `flux-kontext-max` | image | unified | docs only |
-| `gpt-image-2` | image | gpt4o legacy | docs only |
-| `seedream-v5-lite` | image | unified | docs only |
-| `qwen-image` | image | unified | ⚠️ this ID was not accepted on the API (May 2026); check the current kie.ai catalog |
-| `veo3`, `veo3_fast` | video | veo legacy | docs only |
-| `runway-aleph` | video | runway legacy | docs only |
-| `seedance-2` | video | unified | docs only |
-| `suno-v5`, `suno-v4-5` | music | suno legacy | docs only |
-| `elevenlabs-tts`, `elevenlabs-sfx` | speech | unified | docs only |
+Every name below was probed against `POST /jobs/createTask` on 2026-09-09 and
+accepted by the API. Re-run the check after editing `src/registry.ts`:
 
-When an ID returns `422: model name not supported`, query `kie_models` to see the registered catalog and update `src/registry.ts` with the exact name from kie.ai's market.
+```sh
+npm run build && KIE_API_KEY=... npm run check:models
+```
+
+| Model | Kind | Endpoint family | Name sent to kie.ai |
+|---|---|---|---|
+| `nano-banana-2` | image | unified | `nano-banana-2` |
+| `flux-kontext-pro` | image | unified | `flux-kontext-pro` |
+| `flux-kontext-max` | image | unified | `flux-kontext-max` |
+| `gpt-image-2` | image | gpt4o legacy | endpoint-specific, no model name sent |
+| `seedream-v5-lite` | image | unified | `seedream/5-lite-text-to-image`, or `.../5-lite-image-to-image` when `image_input` is given |
+| `qwen-image` | image | unified | `qwen/text-to-image`, or `qwen/image-edit` when `image_input` is given |
+| `veo3`, `veo3_fast` | video | veo legacy | endpoint-specific, no model name sent |
+| `runway-aleph` | video | runway legacy | endpoint-specific, no model name sent |
+| `seedance-2` | video | unified | `bytedance/seedance-2` |
+| `suno-v5`, `suno-v4-5` | music | suno legacy | endpoint-specific, no model name sent |
+| `elevenlabs-tts` | speech | unified | `elevenlabs/text-to-speech-multilingual-v2` |
+
+The ids in the first column are this server's stable public names and do not
+change when kie.ai renames a model. When the two differ, the entry carries an
+`apiModel` in `src/registry.ts`; a function form picks the variant from the
+input, because kie splits some models into separate text-to-X and X-to-X
+entries where this server exposes one id with an optional `image_input`.
+
+`elevenlabs-sfx` was removed in 0.3.0: kie.ai lists elevenlabs only under
+Text to Speech, so that id returned `model name not supported` on every call.
+
+When a call fails with `422: model name not supported`, run `npm run check:models`
+to see which entry drifted, find the current name in
+`GET https://api.kie.ai/api/v1/models`, and set `apiModel` on that entry.
 
 ## Configuration
 

@@ -1,6 +1,6 @@
 {
   "name": "@ulmeanuadrian/kie-mcp",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "MCP server for Kie.ai. Sync-wait, auto-download, batch compare, cost telemetry, local-file upload. Umbrella tools (kie_image, kie_video, kie_music, kie_speech, kie_compare, kie_upload) dispatch across 30+ providers.",
   "type": "module",
   "main": "dist/index.js",
@@ -8,10 +8,12 @@
     "kie-mcp": "dist/index.js"
   },
   "files": [
-    "dist",
-    "README.md",
+    "CHANGELOG.md",
     "INSTALL.md",
-    "LICENSE"
+    "LICENSE",
+    "README.md",
+    "dist",
+    "scripts"
   ],
   "repository": {
     "type": "git",
@@ -31,7 +33,8 @@
     "test": "jest --testPathPattern=tests",
     "eval": "jest --testPathPattern=evals --runInBand",
     "eval:live": "KIE_EVAL_LIVE=1 jest --testPathPattern=evals --runInBand",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "check:models": "node scripts/check-model-names.mjs"
   },
   "keywords": [
     "mcp",

@@ -7,7 +7,7 @@ import { AssetDownloader, DownloadResult } from './downloader.js';
 import { pollUntilTerminal } from './poller.js';
 import { hashIdempotency, TaskStore } from './store.js';
 import { getEndpointFor, listModelsByKind, MODEL_REGISTRY } from './registry.js';
-import { MediaKind, ModelSpec, NormalizedTaskStatus } from './types.js';
+import { MediaKind, ModelSpec, NormalizedTaskStatus, resolveApiModel } from './types.js';
 import { ToolHandler } from './server.js';
 
 interface ToolCtx {
@@ -80,7 +80,7 @@ async function executeSubmission(
 
   const { taskId } = await ctx.client.createTask(
     endpoint,
-    spec.id,
+    resolveApiModel(spec, validatedInput),
     validatedInput,
     callBackUrl,
     { idempotencyKey },
