@@ -179,6 +179,25 @@ describe('Phase 2 — umbrella tools eval', () => {
     expect(body.input.prompt).toBe('a serene mountain at dawn');
   });
 
+  test('kie_image dispatches nano-banana-2-1 to /jobs/createTask at half the nano-banana-2 price', async () => {
+    const { server, calls } = setupServer([
+      { status: 200, body: { code: 200, msg: 'success', data: { taskId: 'tsk_nb21_1' } } },
+    ]);
+    const result = await callTool(server, 'kie_image', {
+      model: 'nano-banana-2-1',
+      input: { prompt: 'a serene mountain at dawn', resolution: '2K', image_input: ['https://example.com/ref.jpg'], output_format: 'png' },
+      wait: false,
+    });
+    const parsed = JSON.parse(result.content[0].text);
+    expect(parsed.model).toBe('nano-banana-2-1');
+    expect(parsed.endpoint_family).toBe('unified');
+    expect(parsed.estimated_cost_usd).toBeCloseTo(0.03, 3); // 6 credits * 0.005
+    expect(calls[0].url).toBe('https://api.test.kie.ai/api/v1/jobs/createTask');
+    const body = JSON.parse(calls[0].init?.body as string);
+    expect(body.model).toBe('nano-banana-2-1');
+    expect(body.input.image_input).toEqual(['https://example.com/ref.jpg']);
+  });
+
   test('kie_video dispatches veo3 to /veo/generate (legacy family)', async () => {
     const { server, calls } = setupServer([
       { status: 200, body: { code: 200, msg: 'success', data: { taskId: 'tsk_veo_1' } } },

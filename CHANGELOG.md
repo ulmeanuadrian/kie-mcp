@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.4.1
+
+### Added
+
+`nano-banana-2-1`: Google Nano Banana 2.1, the stable successor of Nano Banana 2
+(Google, October 2026). Same input schema as `nano-banana-2` (prompt, up to 14
+`image_input` references, aspect_ratio, resolution 1K/2K/4K, output_format) at
+half the kie.ai price: 4 / 6 / 9 credits at 1K / 2K / 4K instead of 8 / 12 / 18.
+Verified on 2026-10-31 with two paid jobs (image-to-image 16:9 1K, 4 credits;
+text-to-image auto 2K png, 6 credits) and the `check:models` probe (12/12).
+`nano-banana-2` stays registered for existing callers.
+
 ## 0.4.0
 
 ### Fixed

@@ -16,8 +16,13 @@ import { PKG_VERSION } from '../src/version.js';
  * also completed paid jobs that day. `runway/gen4-aleph` still passes the name
  * check but every real job fails with "internal error" and docs.kie.ai marks
  * Aleph discontinued, so it stays out of the registry.
+ *
+ * 2026-10-31: `nano-banana-2-1` completed two paid jobs, one with `image_input`
+ * plus aspect_ratio 16:9 / resolution 1K (4 credits) and one text-only with
+ * aspect_ratio auto / resolution 2K / output_format png (6 credits).
  */
 const CONFIRMED_API_MODELS = new Set([
+  'nano-banana-2-1',
   'nano-banana-2',
   'flux-kontext-pro',
   'flux-kontext-max',

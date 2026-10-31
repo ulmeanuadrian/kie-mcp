@@ -23,7 +23,7 @@ If older or missing:
 2. Sign up (free welcome credits)
 3. Copy the key — it's a 32-character hex string (lowercase a–f + digits)
 
-Your first test image (nano-banana-2 at 1K) costs about $0.04 — well within the free tier.
+Your first test image (nano-banana-2-1 at 1K) costs about $0.02 — well within the free tier.
 
 ## 3. Configure your MCP client
 
@@ -85,7 +85,7 @@ You should get back a JSON with `package: @ulmeanuadrian/kie-mcp` and `api_key_s
 
 Then:
 
-> "Generate an image with nano-banana-2: a red apple on a wooden table, photo realistic."
+> "Generate an image with nano-banana-2-1: a red apple on a wooden table, photo realistic."
 
 The AI calls `kie_image` with `wait:true` (default), polls for 30–60 seconds, downloads the asset locally, and returns the local file path.
 
@@ -117,7 +117,7 @@ Ask `kie_models` in your client to see the live catalog. Currently registered:
 
 | Category | Models |
 |---|---|
-| **Image** | nano-banana-2, flux-kontext-pro, flux-kontext-max, gpt-image-2, seedream-v5-lite, qwen-image |
+| **Image** | nano-banana-2-1, nano-banana-2, flux-kontext-pro, flux-kontext-max, gpt-image-2, seedream-v5-lite, qwen-image |
 | **Video** | veo3, veo3_fast, runway-gen4-turbo, seedance-2, wan-animate-replace, kling-motion-control |
 | **Music** | suno-v5, suno-v4-5 |
 | **Speech** | elevenlabs-tts |
@@ -134,7 +134,7 @@ You get total spend + per-model breakdown + remaining budget (if `KIE_COST_BUDGE
 
 ## 9. Compare models side by side
 
-> "Use `kie_compare` with prompt='X' and models=['nano-banana-2','flux-kontext-pro','seedream-v5-lite']."
+> "Use `kie_compare` with prompt='X' and models=['nano-banana-2-1','flux-kontext-pro','seedream-v5-lite']."
 
 Runs all three in parallel (max 4 concurrent) and downloads the grid. Useful when picking the right model for a given prompt.
 

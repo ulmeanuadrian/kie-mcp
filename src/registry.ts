@@ -173,7 +173,23 @@ function resolutionCost(input: Record<string, unknown>): number {
   return 8 * CREDIT_USD;
 }
 
+/** Nano Banana 2.1 on kie.ai: 4 / 6 / 9 credits at 1K / 2K / 4K (price list, 2026-10-31). */
+function resolutionCost21(input: Record<string, unknown>): number {
+  const res = String(input.resolution ?? '1K');
+  if (res === '4K') return 9 * CREDIT_USD;
+  if (res === '2K') return 6 * CREDIT_USD;
+  return 4 * CREDIT_USD;
+}
+
 export const MODEL_REGISTRY: Record<string, ModelSpec> = {
+  'nano-banana-2-1': {
+    id: 'nano-banana-2-1',
+    kind: 'image',
+    family: 'unified',
+    description: 'Google Nano Banana 2.1 (stable successor of Nano Banana 2, Oct 2026). Same input as nano-banana-2 (up to 14 reference images, 4K) at half the price. Prefer it over nano-banana-2.',
+    inputSchema: NanoBananaInputZ,
+    estimateCostUsd: resolutionCost21,
+  },
   'nano-banana-2': {
     id: 'nano-banana-2',
     kind: 'image',

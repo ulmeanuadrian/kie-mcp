@@ -62,6 +62,7 @@ npm run build && KIE_API_KEY=... npm run check:models
 
 | Model | Kind | Endpoint family | Name sent to kie.ai |
 |---|---|---|---|
+| `nano-banana-2-1` | image | unified | `nano-banana-2-1` |
 | `nano-banana-2` | image | unified | `nano-banana-2` |
 | `flux-kontext-pro` | image | unified | `flux-kontext-pro` |
 | `flux-kontext-max` | image | unified | `flux-kontext-max` |
