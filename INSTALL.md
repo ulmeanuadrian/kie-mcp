@@ -118,7 +118,7 @@ Ask `kie_models` in your client to see the live catalog. Currently registered:
 | Category | Models |
 |---|---|
 | **Image** | nano-banana-2, flux-kontext-pro, flux-kontext-max, gpt-image-2, seedream-v5-lite, qwen-image |
-| **Video** | veo3, veo3_fast, runway-aleph, seedance-2 |
+| **Video** | veo3, veo3_fast, runway-gen4-turbo, seedance-2, wan-animate-replace, kling-motion-control |
 | **Music** | suno-v5, suno-v4-5 |
 | **Speech** | elevenlabs-tts |
 

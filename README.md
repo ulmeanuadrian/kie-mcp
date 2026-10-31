@@ -54,7 +54,7 @@ Detailed step-by-step install instructions for Claude Desktop, Claude Code, Curs
 ## Registered models (verification status)
 
 Every name below was probed against `POST /jobs/createTask` on 2026-09-09 and
-accepted by the API. Re-run the check after editing `src/registry.ts`:
+accepted by the API (the two video-to-video names on 2026-10-31). Re-run the check after editing `src/registry.ts`:
 
 ```sh
 npm run build && KIE_API_KEY=... npm run check:models
@@ -69,7 +69,9 @@ npm run build && KIE_API_KEY=... npm run check:models
 | `seedream-v5-lite` | image | unified | `seedream/5-lite-text-to-image`, or `.../5-lite-image-to-image` when `image_input` is given |
 | `qwen-image` | image | unified | `qwen/text-to-image`, or `qwen/image-edit` when `image_input` is given |
 | `veo3`, `veo3_fast` | video | veo legacy | endpoint-specific, no model name sent |
-| `runway-aleph` | video | runway legacy | endpoint-specific, no model name sent |
+| `runway-gen4-turbo` | video | runway legacy | endpoint-specific, no model name sent |
+| `wan-animate-replace` | video | unified | `wan/2-2-animate-replace` |
+| `kling-motion-control` | video | unified | `kling-3.0/motion-control` |
 | `seedance-2` | video | unified | `bytedance/seedance-2` |
 | `suno-v5`, `suno-v4-5` | music | suno legacy | endpoint-specific, no model name sent |
 | `elevenlabs-tts` | speech | unified | `elevenlabs/text-to-speech-multilingual-v2` |

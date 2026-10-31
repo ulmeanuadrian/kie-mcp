@@ -10,6 +10,12 @@ import { PKG_VERSION } from '../src/version.js';
  * API returns: an unknown name answers "The model name you specified is not
  * supported", while a known name answers with an input-validation error such
  * as "prompt is required". Re-probe with that method before editing this list.
+ *
+ * 2026-10-31: the same probe accepted `wan/2-2-animate-replace` ("video_url is
+ * required") and `kling-3.0/motion-control` ("This field is required"); both
+ * also completed paid jobs that day. `runway/gen4-aleph` still passes the name
+ * check but every real job fails with "internal error" and docs.kie.ai marks
+ * Aleph discontinued, so it stays out of the registry.
  */
 const CONFIRMED_API_MODELS = new Set([
   'nano-banana-2',
@@ -21,6 +27,8 @@ const CONFIRMED_API_MODELS = new Set([
   'qwen/image-edit',
   'bytedance/seedance-2',
   'elevenlabs/text-to-speech-multilingual-v2',
+  'wan/2-2-animate-replace',
+  'kling-3.0/motion-control',
 ]);
 
 /** Names kie.ai rejected on the same probe. Kept so a regression names itself. */

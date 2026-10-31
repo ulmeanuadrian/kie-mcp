@@ -105,6 +105,25 @@ const SeedanceInputZ = z
   })
   .strict();
 
+const WanAnimateReplaceInputZ = z
+  .object({
+    video_url: z.string().url(),
+    image_url: z.string().url(),
+    resolution: z.enum(['480p', '580p', '720p']).optional().default('480p'),
+    nsfw_checker: z.boolean().optional(),
+  })
+  .strict();
+
+const KlingMotionControlInputZ = z
+  .object({
+    prompt: z.string().max(2_500).optional(),
+    input_urls: z.array(z.string().url()).min(1).max(1),
+    video_urls: z.array(z.string().url()).min(1).max(1),
+    mode: z.enum(['720p', '1080p']).optional().default('720p'),
+    character_orientation: z.enum(['image', 'video']).optional().default('video'),
+  })
+  .strict();
+
 const SunoInputZ = z
   .object({
     prompt: z.string().min(1).max(2_500),
@@ -135,6 +154,13 @@ function hasImageInput(input: Record<string, unknown>): boolean {
   const v = input.image_input;
   return Array.isArray(v) && v.length > 0;
 }
+
+/**
+ * Video-to-video models bill per second of the source clip, and this server
+ * cannot read a clip's length from its URL. The estimate assumes this many
+ * seconds; the final cost_usd comes from creditsConsumed once the task ends.
+ */
+export const ASSUMED_CLIP_SECONDS = 5;
 
 function flatRateCost(usd: number): () => number {
   return () => usd;
@@ -220,17 +246,16 @@ export const MODEL_REGISTRY: Record<string, ModelSpec> = {
     inputSchema: Veo3InputZ,
     estimateCostUsd: flatRateCost(0.3),
   },
-  'runway-aleph': {
-    id: 'runway-aleph',
+  'runway-gen4-turbo': {
+    id: 'runway-gen4-turbo',
     kind: 'video',
     family: 'runway',
-    description: 'Runway Aleph — video editing + transformation.',
+    description:
+      'Runway Gen-4 Turbo: text-to-video, or image-to-video with imageUrl. 5 or 10 s, 720p or 1080p (10 s only at 720p). Priced per video: 12 credits at 720p, 30 at 1080p. Not Aleph: kie.ai discontinued Runway Aleph.',
     inputSchema: RunwayInputZ,
     estimateCostUsd: (input) => {
-      const duration = Number(input.duration ?? 5);
       const quality = String(input.quality ?? '720p');
-      const base = quality === '1080p' ? 0.15 : 0.08;
-      return base * duration;
+      return (quality === '1080p' ? 30 : 12) * CREDIT_USD;
     },
   },
   'seedance-2': {
@@ -241,6 +266,33 @@ export const MODEL_REGISTRY: Record<string, ModelSpec> = {
     inputSchema: SeedanceInputZ,
     apiModel: 'bytedance/seedance-2',
     estimateCostUsd: (input) => 0.06 * Number(input.duration ?? 5),
+  },
+  'wan-animate-replace': {
+    id: 'wan-animate-replace',
+    kind: 'video',
+    family: 'unified',
+    description:
+      'Alibaba Wan 2.2 Animate Replace: swaps the person in video_url with the character from image_url, keeping the clip background, motion and audio. Video mp4/mov/mkv and image jpg/png/webp, each up to 10 MB, clip up to 30 s. Billed per second of the clip: 6 credits at 480p (default), 9.5 at 580p, 12.5 at 720p; the estimate assumes a 5 s clip.',
+    inputSchema: WanAnimateReplaceInputZ,
+    apiModel: 'wan/2-2-animate-replace',
+    estimateCostUsd: (input) => {
+      const res = String(input.resolution ?? '480p');
+      const perSecond = res === '720p' ? 12.5 : res === '580p' ? 9.5 : 6;
+      return perSecond * ASSUMED_CLIP_SECONDS * CREDIT_USD;
+    },
+  },
+  'kling-motion-control': {
+    id: 'kling-motion-control',
+    kind: 'video',
+    family: 'unified',
+    description:
+      'Kling 3.0 Motion Control: animates the character from input_urls[0] with the motion of video_urls[0] (3-30 s clip showing head, shoulders and torso); the background comes from the image, not the clip. Billed per second of the clip: 20 credits at 720p (default), 27 at 1080p; the estimate assumes a 5 s clip.',
+    inputSchema: KlingMotionControlInputZ,
+    apiModel: 'kling-3.0/motion-control',
+    estimateCostUsd: (input) => {
+      const perSecond = String(input.mode ?? '720p') === '1080p' ? 27 : 20;
+      return perSecond * ASSUMED_CLIP_SECONDS * CREDIT_USD;
+    },
   },
   'suno-v5': {
     id: 'suno-v5',

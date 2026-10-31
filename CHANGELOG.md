@@ -1,5 +1,50 @@
 # Changelog
 
+## 0.4.0
+
+### Fixed
+
+**Breaking:** the model registered as `runway-aleph` was never Aleph. It posted
+to `/runway/generate` with the Gen-4 input schema (`prompt`, `duration`,
+`quality`, `aspectRatio`, `imageUrl`), which is Runway Gen-4 Turbo
+text-to-video and image-to-video. It is now registered as `runway-gen4-turbo`
+with that description, and its cost estimate follows kie.ai's per-video price
+(12 credits at 720p, 30 at 1080p) instead of a per-second guess that was
+roughly seven times too high.
+
+Runway Aleph itself is not added: on 2026-10-31 docs.kie.ai marked it
+"Discontinued. Runway Aleph is no longer available on Kie AI", and two valid
+`runway/gen4-aleph` jobs (public mp4 plus reference image) failed with
+`failCode 500 internal error` at zero credits. The name still passes the
+empty-input probe, so `check:models` cannot catch this; the registry simply
+does not carry it. Upstream, Runway retired Gen-4 Aleph from the Runway Dev
+API on 2026-07-30 (api changelog, "Gen-3 Alpha Turbo and Gen-4 Aleph sunset");
+its successor Aleph 2.0 is not in the kie.ai catalog.
+
+### Added
+
+Two video-to-video models on the `unified` endpoint, both run as paid jobs
+on 2026-10-31 and matched to the credits kie.ai charged:
+
+| Public id | Name sent to kie.ai | Input | Price |
+|---|---|---|---|
+| `wan-animate-replace` | `wan/2-2-animate-replace` | `video_url`, `image_url`, `resolution` 480p/580p/720p, `nsfw_checker` | 6 / 9.5 / 12.5 credits per second of the clip |
+| `kling-motion-control` | `kling-3.0/motion-control` | `prompt`, `input_urls` (one image), `video_urls` (one 3-30 s clip), `mode` 720p/1080p, `character_orientation` | 20 / 27 credits per second of the clip |
+
+A 5 s clip cost 62.5 credits (0.31 USD) on Wan at 720p and 100 credits
+(0.50 USD) on Kling at 720p. Wan keeps the clip's background and motion and
+puts the character from the image into it; Kling animates the character with
+the clip's motion but takes the background from the image.
+
+Both bill per second of the source clip, and the server cannot read a clip's
+length from a URL, so `estimated_cost_usd` assumes a 5 s clip
+(`ASSUMED_CLIP_SECONDS` in `src/registry.ts`). The `cost_usd` reported after
+the task finishes comes from `creditsConsumed` and is exact.
+
+`evals/phase8_video_to_video.eval.ts` pins the three entries: names on the
+wire, schemas, the estimates against the credits charged on 2026-10-31, and
+the absence of `runway-aleph`.
+
 ## 0.3.0
 
 ### Fixed

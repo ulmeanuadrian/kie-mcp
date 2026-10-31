@@ -292,7 +292,14 @@ describe('Phase 2 — umbrella tools eval', () => {
     expect(Array.isArray(parsed)).toBe(true);
     expect(parsed.every((m: { kind: string }) => m.kind === 'video')).toBe(true);
     const ids = parsed.map((m: { id: string }) => m.id);
-    expect(ids).toEqual(expect.arrayContaining(['veo3', 'veo3_fast', 'runway-aleph', 'seedance-2']));
+    expect(ids).toEqual(expect.arrayContaining([
+        'veo3',
+        'veo3_fast',
+        'runway-gen4-turbo',
+        'seedance-2',
+        'wan-animate-replace',
+        'kling-motion-control',
+      ]));
   });
 
   test('registry sanity: all models route to a valid endpoint family', () => {
